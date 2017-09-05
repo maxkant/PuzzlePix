@@ -14,16 +14,27 @@ import java.util.Random;
 
 class Scrambler {
 
+    // Holds the sequence of scrambling moves
     private moveDirection[] sequence;
+
+    // Number of moves
     private int sequenceSize;
+
+    // Starting/ending location of blank
     private int startingBlankX;
     private int startingBlankY;
     private int endingBlankX;
     private int endingBlankY;
-    private float sideLength;
-    private ImageView[][] pieceArray;
-    private  PuzzleView puzzleView;
 
+    // Edge length of pices
+    private float sideLength;
+
+    // Container for pieces
+    private ImageView[][] pieceArray;
+
+    private PuzzleView puzzleView;
+
+    // Calculate the sequence of moves for the scramble
     void generateMoveSequence(long seed, int sSize, int gridSize, int blankX, int blankY){
 
         Random random = new Random(seed);
@@ -41,7 +52,7 @@ class Scrambler {
             while(!stop) {
                 rand = random.nextInt(4);
 
-                //don't go back the same way you just came
+                // Don't go back the same way you just came
                 if(lastRand!= (rand + 2) % 4) {
                     switch (rand) {
                         case 0: {
@@ -107,9 +118,9 @@ class Scrambler {
             lastRand = rand;
 
         }
-
     }
 
+    // Start the scramble
     void startScramble(ImageView[][] pieces, float sLength, PuzzleView pV) {
 
         pieceArray = pieces;
@@ -119,8 +130,8 @@ class Scrambler {
 
     }
 
+    // Move a piece one step of the scramble - recursively calls itself to move the next piece until scrambling is over
     private void translatePiece(final int index, int blankX, int blankY){
-
 
         ImageView piece;
         String animationString = null;
@@ -129,6 +140,7 @@ class Scrambler {
         int nextBX = 0;
         int nextBY = 0;
 
+        // Prepare animation info
         switch (sequence[index]){
 
             case UP:{
@@ -186,22 +198,25 @@ class Scrambler {
         final int bX = blankX;
         final int bY = blankY;
 
+        // Grab piece from array
         piece = pieceArray[nextBX][nextBY];
 
         if (index < sequenceSize - 1) {
+
+            // Create translate animation
             ObjectAnimator translate = ObjectAnimator.ofFloat(piece, animationString, startCoord, endCoord);
-            translate.setDuration(0);
+            translate.setDuration(50);
             translate.addListener(new Animator.AnimatorListener() {
                 @Override
                 public void onAnimationStart(Animator animator) {
-
+                    // Change pieces in the array
                     swapPieces(bX, bY, pX, pY);
 
                 }
 
                 @Override
                 public void onAnimationEnd(Animator animator) {
-
+                    // Start next animation when this one is finished
                     translatePiece(index + 1, pX, pY);
 
                 }
@@ -221,7 +236,7 @@ class Scrambler {
         }
 
         else{
-
+            // If done scrambling, set ending coordinates of the blank and tell the puzzle view the scramble is over
             endingBlankX = bX;
             endingBlankY = bY;
             doneScrambling();

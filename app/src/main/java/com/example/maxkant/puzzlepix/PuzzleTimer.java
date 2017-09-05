@@ -4,16 +4,10 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Handler;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.util.AttributeSet;
-import android.widget.TextView;
 
 import java.util.Locale;
 
-/**
- * Created by maxkant on 2/12/17.
- */
 
 public class PuzzleTimer extends android.support.v7.widget.AppCompatTextView {
 

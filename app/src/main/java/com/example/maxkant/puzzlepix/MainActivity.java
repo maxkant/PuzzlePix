@@ -3,33 +3,28 @@ package com.example.maxkant.puzzlepix;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
-import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
-import android.util.TypedValue;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.RelativeLayout;
 import com.theartofdev.edmodo.cropper.CropImage;
 
-import java.io.IOException;
-
 public class MainActivity extends AppCompatActivity {
 
     PuzzleView puzzleView;
+    Uri mCropImageUri;
+    Uri puzzleUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Remove action bar
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_main);
@@ -40,61 +35,36 @@ public class MainActivity extends AppCompatActivity {
         // Creating the layout to hold the puzzle pieces
         puzzleView = new PuzzleView(this);
         // The number of pieces in x and y
-        final int gridSize = 3;
+        final int gridSize = 4;
         mainLayout.addView(puzzleView);
 
-        Button button = (Button) findViewById(R.id.button);
+        Button startButton = (Button) findViewById(R.id.start_button);
 
-        button.setOnClickListener(new View.OnClickListener() {
+        startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
 
                 int width = mainLayout.getWidth();
 
                 puzzleView.setGridSize(gridSize);
                 // Checking to see if the dimensions of the puzzle view are a multiple of the grid size,
-                // otherwise funky rounding errors can cause breaks between pieces
-                while ((width % gridSize) != 0){
+                // otherwise rounding errors can cause breaks between pieces.
 
-                    width -= 1;
+                // Decrease width until an even number of pieces will fit inside.
+                while ((width % gridSize) != 0){ width -= 1; }
 
-                }
-
-                CropImage.startPickImageActivity(MainActivity.this);
+                // Set puzzle view to be correct size
                 RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(width, width);
                 layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT, -1);
                 puzzleView.setLayoutParams(layoutParams);
 
-            }
-        });
-        final PuzzleTimer timer = (PuzzleTimer) findViewById(R.id.pTimer);
-
-        Button startButton = (Button) findViewById(R.id.start);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                timer.startTimer();
+                // Start pick image activity
+                CropImage.startPickImageActivity(MainActivity.this);
 
             }
         });
-        Button pauseButton = (Button) findViewById(R.id.pause);
-        pauseButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-
-                timer.pauseTimer();
-
-            }
-        });
-
 
     }
-
-    Uri mCropImageUri;
-    Uri puzzleUri;
 
     @Override
     @SuppressLint("NewApi")
@@ -111,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
 
             } else {
                 // no permissions required or already granted, can start crop image activity
-                startCropImageActivity(imageUri);
+                CropImage.activity(imageUri).setAspectRatio(1, 1).setFixAspectRatio(true).start(this);
             }
         }
 
@@ -128,16 +98,6 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-
     }
-
-    private void startCropImageActivity(Uri imageUri) {
-
-        CropImage.activity(imageUri).setAspectRatio(1, 1).setFixAspectRatio(true).start(this);
-
-
-    }
-
-
 
 }

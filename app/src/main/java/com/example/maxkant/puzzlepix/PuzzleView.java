@@ -32,29 +32,58 @@ public class PuzzleView extends RelativeLayout {
     int startingBlankX;
     int startingBlankY;
 
-    public PuzzleView(Context context) {
-        super(context);
+    int pWidth;
+    int pHeight;
 
-        parentActivity = (Activity) context;
-        imageDecoder = new ImageDecoder(parentActivity);
+    PuzzleTimer pTimer;
 
-    }
+    long tapDownTime;
+    long tapUpTime;
+    long tapDuration;
 
+    int dx;
+    int dy;
 
-    public void setGridSize(int gS){
+    int currentBlankX;
+    int currentBlankY;
 
-        nGrid = gS;
-        pieces = new ImageView[nGrid][nGrid];
+    moveDirection direction;
 
-    }
+    int duration = 50;
+    public boolean unlocked = false;
 
-    public enum moveDirection{
+    ImageView piece;
+
+    int pX = 0;
+    int pY = 0;
+
+    PointF downPT = new PointF();
+    private static final int INVALID_POINTER_ID = -1;
+    int action;
+    private int activePointer = INVALID_POINTER_ID;
+
+    enum moveDirection{
 
         UP,
         RIGHT,
         LEFT,
         DOWN,
         NONE
+
+    }
+
+    public PuzzleView(Context context) {
+
+        super(context);
+        parentActivity = (Activity) context;
+        imageDecoder = new ImageDecoder(parentActivity);
+
+    }
+
+    public void setGridSize(int gS){
+
+        nGrid = gS;
+        pieces = new ImageView[nGrid][nGrid];
 
     }
 
@@ -79,14 +108,14 @@ public class PuzzleView extends RelativeLayout {
 
     }
 
-    int pWidth;
-    int pHeight;
-
+    // Cuts the puzzle bitmap into pieces and sets the tile views as children
     private void createChildren(){
-        // Cuts the puzzle bitmap into pieces and sets the tile views as children
 
+        // Remove pieces if there was a previously active puzzle
+        removeAllViews();
         int bWidth = puzzleBitmap.getWidth();
         int bHeight = puzzleBitmap.getHeight();
+
 
         int scaledWidth = Math.round(bWidth/nGrid);
         int scaledHeight = Math.round(bHeight/nGrid);
@@ -116,22 +145,7 @@ public class PuzzleView extends RelativeLayout {
                 piece.setX(xCoordinate);
                 piece.setY(yCoordinate);
 
-//                TextView tV = new TextView(parentActivity);
-//                tV.setWidth(pWidth);
-//                tV.setHeight(pHeight);
-//                tV.setText("(" + String.valueOf(i) + ", " + String.valueOf(j) + ")");
-//                tV.setX(xCoordinate);
-//                tV.setY(yCoordinate);
-//                tV.setTextSize(15);
-//                tV.setGravity(Gravity.CENTER);
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-//                    tV.setElevation(1f);
-//                }
-//                addView(tV);
-
-
                 addView(piece);
-
 
                 pieces[i][j] = piece;
 
@@ -144,14 +158,13 @@ public class PuzzleView extends RelativeLayout {
 
     }
 
-    PuzzleTimer pTimer;
-
     public void initializePuzzle(){
 
         setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
 
+                // Calculate which piece was touched and set that to be the blank for this puzzle
                 float x = motionEvent.getX();
                 float y = motionEvent.getY();
 
@@ -167,6 +180,7 @@ public class PuzzleView extends RelativeLayout {
 
             }
         });
+
         pTimer = (PuzzleTimer) parentActivity.findViewById(R.id.pTimer);
         Toast startToast = Toast.makeText(parentActivity, "Tap a piece to start the puzzle!", Toast.LENGTH_LONG);
         startToast.show();
@@ -175,9 +189,11 @@ public class PuzzleView extends RelativeLayout {
 
     public void startPuzzle(final int pX, final int pY){
 
+        // Set up the fade out animation for the blank piece
         ImageView bTest = pieces[pX][pY];
         ObjectAnimator fadeOut = ObjectAnimator.ofFloat(bTest, "alpha", 1f, 0f);
         fadeOut.setDuration(1000);
+
         final float sideLength = vWidth / nGrid;
 
         setOnTouchListener(new OnTouchListener() {@Override public boolean onTouch(View view, MotionEvent motionEvent) {return false;}});
@@ -194,6 +210,7 @@ public class PuzzleView extends RelativeLayout {
             @Override
             public void onAnimationEnd(Animator animator) {
 
+                // Start the scramble when the blank is faded
                 pScrambler.startScramble(pieces, sideLength, PuzzleView.this);
 
             }
@@ -211,21 +228,9 @@ public class PuzzleView extends RelativeLayout {
 
         fadeOut.start();
 
-        //pScrambler.testMove(pieces[0][0], nGrid, sideLength);
-
-
-
     }
 
-    int dx;
-    int dy;
-
-    int currentBlankX;
-    int currentBlankY;
-
-
-    moveDirection direction;
-
+    // Decides if a given piece can move based on its position and the current position of the blank
     public moveDirection canMove(int pX, int pY){
 
         moveDirection dir = moveDirection.NONE;
@@ -257,14 +262,17 @@ public class PuzzleView extends RelativeLayout {
 
         }
 
+        // Left or right of the blank
         else if (pY == currentBlankY & (Math.abs(pX - currentBlankX) == 1)){
 
+            // Right
             if (pX == currentBlankX + 1){
 
                 dir = moveDirection.LEFT;
 
             }
 
+            // Left
             else {
 
                 dir = moveDirection.RIGHT;
@@ -277,10 +285,7 @@ public class PuzzleView extends RelativeLayout {
 
     }
 
-    int duration = 50;
-    public boolean unlocked = false;
-
-
+    // Allow the pieces to be moved once the puzzle is scrambled
     public void unlockPieces(int bX, int bY, final ImageView[][] pieceArray){
 
         currentBlankX = bX;
@@ -292,6 +297,7 @@ public class PuzzleView extends RelativeLayout {
 
     }
 
+    // Called when the pieces are all back in the rigth place
     public void solvedEvent(){
 
         unlocked = false;
@@ -303,44 +309,20 @@ public class PuzzleView extends RelativeLayout {
         fadeIn.setDuration(1000);
         fadeIn.start();
 
-
     }
 
-    ImageView piece;
-
-    int pX = 0;
-    int pY = 0;
-
-    PointF downPT = new PointF();
-    private static final int INVALID_POINTER_ID = -1;
-    int action;
-    private int activePointer = INVALID_POINTER_ID;
-
+    // Intercept touch events to manually move pieces
     @Override
-    public boolean onInterceptTouchEvent(MotionEvent ev) {
-
-
-        // Return true to intercept touch event, to be handled by this viewGroup's onTouchEvent
-        // False will allow the touch event through to the viewGroup's children
-
-        return true;
-
-    }
-
-    long tapDownTime;
-    long tapUpTime;
-    long tapDuration;
+    public boolean onInterceptTouchEvent(MotionEvent ev) { return true; }
 
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-
-
+        // If pieces are allowed to mvoe
         if (unlocked) {
 
             action = event.getAction();
-
 
             switch (action & MotionEvent.ACTION_MASK) {
 
@@ -353,7 +335,7 @@ public class PuzzleView extends RelativeLayout {
 
                     downPT.x = event.getX(activePointer);
                     downPT.y = event.getY(activePointer);
-                    //float test = nGrid * event.getX() / vWidth;
+
                     pX = (int) Math.floor(nGrid * event.getX() / vWidth);
                     pY = (int) Math.floor(nGrid * event.getY() / vHeight);
 
@@ -362,7 +344,6 @@ public class PuzzleView extends RelativeLayout {
                     piece = pieces[pX][pY];
 
                     tapDownTime = System.currentTimeMillis();
-
 
                     break;
 
